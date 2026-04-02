@@ -11,46 +11,78 @@
     <div class="container">
         <header class="header">
             <h1><i class="fas fa-video"></i> Criteria Generator</h1>
-            <p>Analyze video features across multiple platforms</p>
+            <p>Paste your JSON video features data and analyze</p>
         </header>
 
         <main class="main-content">
-            <section class="upload-section">
-                <div class="upload-card">
-                    <h2>Upload Video Features File</h2>
-                    <p class="subtitle">Supported formats: JSON, Excel (.xlsx, .xls), CSV</p>
+            <section class="input-section">
+                <div class="input-card">
+                    <h2>📋 Paste JSON Data</h2>
+                    <p class="subtitle">Copy and paste your JSON video feature data below</p>
                     
-                    <div class="upload-area" id="uploadArea">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <p class="upload-text">Drag and drop your file here or click to browse</p>
-                        <input type="file" id="fileInput" class="file-input" accept=".json,.xlsx,.xls,.csv" hidden>
-                    </div>
+                    <textarea id="jsonInput" class="json-textarea" placeholder='Paste your JSON here, e.g:
+{
+    "file_name": "video.mp4",
+    "file_type": "mp4",
+    "aspect_ratio": 0.5625,
+    "video_width": 720,
+    "video_height": 1280,
+    "video_duration": 15.0,
+    "file_size": 2620327,
+    "music": "TRUE",
+    "parents_present": "TRUE",
+    "editing_and_visual_effects": "TRUE",
+    "visual_pace": "fast",
+    "number_of_editing_cuts_or_visual_transitions": 7
+}'></textarea>
 
                     <div class="settings">
-                        <label for="watThreshold">WAT Threshold:</label>
+                        <label for="watThreshold">WAT Threshold (seconds):</label>
                         <input type="number" id="watThreshold" value="2.0" step="0.1" min="0">
+                        <span class="help-text">Timing threshold for early appearance criteria</span>
                     </div>
 
-                    <button id="analyzeBtn" class="btn btn-primary" disabled>
-                        <i class="fas fa-play-circle"></i> Analyze
-                    </button>
+                    <div class="button-group">
+                        <button id="analyzeBtn" class="btn btn-primary">
+                            <i class="fas fa-play-circle"></i> Analyze
+                        </button>
+                        <button id="clearBtn" class="btn btn-secondary">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                    </div>
                 </div>
             </section>
 
             <div id="loadingIndicator" class="loading-indicator hidden">
                 <div class="spinner"></div>
-                <p>Processing your file...</p>
+                <p>Processing your data...</p>
             </div>
 
-            <div id="errorMessage" class="error-message hidden"></div>
+            <div id="errorMessage" class="error-message hidden">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="errorText"></span>
+            </div>
 
             <section id="resultsSection" class="results-section hidden">
                 <div class="results-header">
-                    <h2>Analysis Results</h2>
+                    <h2><i class="fas fa-check-circle"></i> Analysis Results</h2>
+                    <div class="action-buttons">
+                        <button id="printBtn" class="btn btn-secondary" title="Print results">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <button id="downloadBtn" class="btn btn-secondary" title="Download as JSON">
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                    </div>
                 </div>
+
                 <div id="resultsContainer"></div>
             </section>
         </main>
+
+        <footer class="footer">
+            <p>Criteria Generator v1.0 | Video Feature Analysis Tool</p>
+        </footer>
     </div>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
