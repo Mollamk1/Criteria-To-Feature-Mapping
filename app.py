@@ -53,8 +53,21 @@ class CriteriaGenerator:
                     self.processed_data[key] = True
                 elif value.upper() == "FALSE":
                     self.processed_data[key] = False
+                elif re.match(r'^\d{2}:\d{2}:\d{2}$', value):
+                    # Time format: HH:MM:SS → seconds
+                    parts = value.split(':')
+                    seconds = int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2])
+                    self.processed_data[key] = seconds
                 else:
-                    self.processed_data[key] = value
+                    # Try to convert to number if possible
+                    try:
+                        if '.' in value:
+                            self.processed_data[key] = float(value)
+                        else:
+                            self.processed_data[key] = int(value)
+                    except (ValueError, TypeError):
+                        # Not a number, keep as string
+                        self.processed_data[key] = value
             else:
                 self.processed_data[key] = value
 
