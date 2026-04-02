@@ -1,74 +1,79 @@
-const uploadArea = document.getElementById('uploadArea');
-const fileInput = document.getElementById('fileInput');
+const jsonInput = document.getElementById('jsonInput');
 const analyzeBtn = document.getElementById('analyzeBtn');
+const clearBtn = document.getElementById('clearBtn');
 const loadingIndicator = document.getElementById('loadingIndicator');
 const errorMessage = document.getElementById('errorMessage');
+const errorText = document.getElementById('errorText');
 const resultsSection = document.getElementById('resultsSection');
 const resultsContainer = document.getElementById('resultsContainer');
+const printBtn = document.getElementById('printBtn');
+const downloadBtn = document.getElementById('downloadBtn');
 const watThreshold = document.getElementById('watThreshold');
 
-uploadArea.addEventListener('click', () => fileInput.click());
-
-fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) {
-        analyzeBtn.disabled = false;
-    }
-});
-
-uploadArea.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    uploadArea.classList.add('dragover');
-});
-
-uploadArea.addEventListener('dragleave', () => {
-    uploadArea.classList.remove('dragover');
-});
-
-uploadArea.addEventListener('drop', (e) => {
-    e.preventDefault();
-    uploadArea.classList.remove('dragover');
-    fileInput.files = e.dataTransfer.files;
-    analyzeBtn.disabled = false;
-});
-
+// Analyze button
 analyzeBtn.addEventListener('click', async () => {
-    if (!fileInput.files.length) {
-        showError('Please select a file');
+    const jsonText = jsonInput.value.trim();
+    
+    if (!jsonText) {
+        showError('Please paste JSON data in the text area');
         return;
     }
 
-    const formData = new FormData();
-    formData.append('file', fileInput.files[0]);
-    formData.append('wat_threshold', watThreshold.value);
+    let data;
+    try {
+        data = JSON.parse(jsonText);
+    } catch (e) {
+        showError(`Invalid JSON: ${e.message}`);
+        return;
+    }
 
     showLoading(true);
     errorMessage.classList.add('hidden');
 
     try {
+        const formData = new FormData();
+        // Create a blob from the JSON data
+        const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+        formData.append('file', blob, 'data.json');
+        formData.append('wat_threshold', watThreshold.value);
+
         const response = await fetch('/upload', {
             method: 'POST',
             body: formData
         });
 
-        const data = await response.json();
+        const responseData = await response.json();
 
         if (!response.ok) {
-            showError(data.error || 'An error occurred');
+            showError(responseData.error || 'An error occurred');
             showLoading(false);
             return;
         }
 
-        displayResults(data.results);
+        displayResults(responseData.results);
         resultsSection.classList.remove('hidden');
         showLoading(false);
+        
+        // Scroll to results
+        setTimeout(() => {
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
     } catch (error) {
         showError(`Error: ${error.message}`);
         showLoading(false);
     }
 });
 
+// Clear button
+clearBtn.addEventListener('click', () => {
+    jsonInput.value = '';
+    resultsSection.classList.add('hidden');
+    errorMessage.classList.add('hidden');
+    jsonInput.focus();
+});
+
 function showError(message) {
-    errorMessage.textContent = message;
+    errorText.textContent = message;
     errorMessage.classList.remove('hidden');
 }
 
@@ -108,18 +113,23 @@ function displayResults(results) {
             
             const nameCell = document.createElement('td');
             nameCell.textContent = criterion.criteria_name;
+            nameCell.style.fontWeight = '600';
             row.appendChild(nameCell);
             
             const featuresCell = document.createElement('td');
             featuresCell.textContent = criterion.features_mapped;
+            featuresCell.style.fontSize = '0.85em';
             row.appendChild(featuresCell);
             
             const resultCell = document.createElement('td');
             resultCell.textContent = criterion.feature_results;
+            resultCell.style.fontSize = '0.85em';
             row.appendChild(resultCell);
             
             const formulaCell = document.createElement('td');
             formulaCell.textContent = criterion.formula;
+            formulaCell.style.fontSize = '0.8em';
+            formulaCell.style.color = '#666';
             row.appendChild(formulaCell);
             
             const resultValueCell = document.createElement('td');
@@ -129,10 +139,10 @@ function displayResults(results) {
             
             if (result === 'True' || result === 'true') {
                 badge.classList.add('true');
-                badge.textContent = '✓ True';
+                badge.textContent = 'True';
             } else if (result === 'False' || result === 'false') {
                 badge.classList.add('false');
-                badge.textContent = '✗ False';
+                badge.textContent = 'False';
             } else {
                 badge.classList.add('value');
                 badge.textContent = result;
@@ -146,3 +156,25 @@ function displayResults(results) {
         resultsContainer.appendChild(table);
     }
 }
+
+// Print button
+printBtn.addEventListener('click', () => {
+    window.print();
+});
+
+// Download button
+downloadBtn.addEventListener('click', () => {
+    const resultsText = resultsContainer.innerText;
+    const element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(resultsText));
+    element.setAttribute('download', 'criteria-results.txt');
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+});
+
+// Auto-focus textarea on page load
+document.addEventListener('DOMContentLoaded', () => {
+    jsonInput.focus();
+});
